@@ -1,7 +1,16 @@
 import { useEffect, useState } from "react";
-import { FloatButton, Modal, Segmented, Space, Table, TableProps } from "antd";
+import {
+  Button,
+  FloatButton,
+  Modal,
+  Row,
+  Segmented,
+  Space,
+  Table,
+  TableProps,
+} from "antd";
 import { TableInventoryType } from "../../../domain/types/table-inventory-type";
-import { PlusOutlined } from "@ant-design/icons";
+import { PlusOutlined, ReloadOutlined } from "@ant-design/icons";
 import InventoryForm from "../components/form";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -9,6 +18,7 @@ import {
   setData,
 } from "../../../domain/reducers/inventoryTableSlice";
 import { fetchDataFirebase } from "../../../data/api/firebaseService";
+import Column from "antd/es/table/Column";
 
 const InvetoryScreen = () => {
   const dispatch = useDispatch();
@@ -16,18 +26,17 @@ const InvetoryScreen = () => {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [category, setCategory] = useState<string>("SANDWICH");
   const [id, setId] = useState<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
 
   const handleFetchData = async () => {
+    setLoading(true);
     const list: any = await fetchDataFirebase();
     if (list) {
       dispatch(setData(list));
       handlFilter(category);
     }
+    setLoading(false);
   };
-
-  useEffect(() => {
-    handleFetchData();
-  }, []);
 
   const tableInventoryColumn: TableProps<TableInventoryType>["columns"] = [
     {
@@ -66,7 +75,6 @@ const InvetoryScreen = () => {
       render: (_, record) => (
         <Space size="middle">
           <a onClick={() => handleEditBtn(record.id)}>EDIT</a>
-          <a>DELETE</a>
         </Space>
       ),
     },
@@ -91,31 +99,45 @@ const InvetoryScreen = () => {
     setId(null);
   }
 
+  useEffect(() => {
+    handleFetchData();
+  }, []);
+
   return (
     <div>
-      <Segmented
-        value={category}
-        onChange={(value: string) => handlFilter(value)}
-        options={[
-          {
-            label: "Sandwich",
-            value: "SANDWICH",
-          },
-          {
-            label: "Chicken",
-            value: "CHICKEN",
-          },
-          {
-            label: "Pasta",
-            value: "PASTA",
-          },
-          {
-            label: "Drinks",
-            value: "DRINKS",
-          },
-        ]}
+      <Row justify="space-between">
+        <Button onClick={handleFetchData}>
+          <ReloadOutlined />
+        </Button>
+        <Segmented
+          value={category}
+          onChange={(value: string) => handlFilter(value)}
+          options={[
+            {
+              label: "Sandwich",
+              value: "SANDWICH",
+            },
+            {
+              label: "Chicken",
+              value: "CHICKEN",
+            },
+            {
+              label: "Pasta",
+              value: "PASTA",
+            },
+            {
+              label: "Drinks",
+              value: "DRINKS",
+            },
+          ]}
+        />
+      </Row>
+      <br />
+      <Table
+        columns={tableInventoryColumn}
+        dataSource={table}
+        loading={loading}
       />
-      <Table columns={tableInventoryColumn} dataSource={table} />
       <Modal
         title=""
         open={isModalOpen}
