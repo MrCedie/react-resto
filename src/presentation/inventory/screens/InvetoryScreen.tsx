@@ -15,27 +15,50 @@ import InventoryForm from "../components/form";
 import { useDispatch, useSelector } from "react-redux";
 import {
   filterTable,
+  setCategory,
   setData,
 } from "../../../domain/reducers/inventoryTableSlice";
-import { fetchDataFirebase } from "../../../data/api/firebaseService";
-import Column from "antd/es/table/Column";
+import {
+  getProductsFirebase,
+  getCategoryFirebase,
+} from "../../../data/api/firebaseService";
+import { RootState } from "../../../domain/store/store";
+
+type InventoryTableState = RootState["inventoryTable"];
 
 const InvetoryScreen = () => {
   const dispatch = useDispatch();
-  const { table } = useSelector((state: any) => state.inventoryTable);
+  const { data, table, category } = useSelector<RootState, InventoryTableState>(
+    (state: any) => state.inventoryTable
+  );
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-  const [category, setCategory] = useState<string>("SANDWICH");
+  const [selectedCategory, setCategorySegment] = useState<string | undefined>(
+    undefined
+  );
   const [id, setId] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
 
   const handleFetchData = async () => {
     setLoading(true);
-    const list: any = await fetchDataFirebase();
+    const list: any = await getProductsFirebase();
     if (list) {
       dispatch(setData(list));
-      handlFilter(category);
     }
     setLoading(false);
+  };
+
+  const handleRefetchData = async () => {
+    await handleFetchData();
+    if (selectedCategory) {
+      handlFilter(selectedCategory);
+    }
+  };
+
+  const getCategory = async () => {
+    const list = await getCategoryFirebase();
+    if (list) {
+      dispatch(setCategory(list));
+    }
   };
 
   const tableInventoryColumn: TableProps<TableInventoryType>["columns"] = [
@@ -48,11 +71,6 @@ const InvetoryScreen = () => {
       title: "Product Name",
       dataIndex: "name",
       key: "name",
-    },
-    {
-      title: "Option",
-      dataIndex: "option",
-      key: "option",
     },
     {
       title: "Price",
@@ -80,17 +98,13 @@ const InvetoryScreen = () => {
     },
   ];
 
-  const handleAddBtn = () => {
-    setIsModalOpen(true);
-  };
-
   const handleEditBtn = (id: string) => {
     setId(id);
     setIsModalOpen(true);
   };
 
   const handlFilter = (value: string) => {
-    setCategory(value);
+    setCategorySegment(value);
     dispatch(filterTable(value));
   };
 
@@ -99,37 +113,34 @@ const InvetoryScreen = () => {
     setId(null);
   }
 
-  useEffect(() => {
+  const handleRefeshTable = () => {
     handleFetchData();
+    getCategory();
+  };
+
+  useEffect(() => {
+    handleRefeshTable();
   }, []);
+
+  useEffect(() => {
+    if (category.length > 0 && data.length > 0 && selectedCategory == null) {
+      handlFilter(category[0].id);
+    }
+  }, [category]);
 
   return (
     <div>
       <Row justify="space-between">
-        <Button onClick={handleFetchData}>
+        <Button onClick={handleRefeshTable}>
           <ReloadOutlined />
         </Button>
         <Segmented
-          value={category}
+          value={selectedCategory}
           onChange={(value: string) => handlFilter(value)}
-          options={[
-            {
-              label: "Sandwich",
-              value: "SANDWICH",
-            },
-            {
-              label: "Chicken",
-              value: "CHICKEN",
-            },
-            {
-              label: "Pasta",
-              value: "PASTA",
-            },
-            {
-              label: "Drinks",
-              value: "DRINKS",
-            },
-          ]}
+          options={category.map((res) => ({
+            label: res.name,
+            value: res.id,
+          }))}
         />
       </Row>
       <br />
@@ -137,6 +148,7 @@ const InvetoryScreen = () => {
         columns={tableInventoryColumn}
         dataSource={table}
         loading={loading}
+        pagination={false}
       />
       <Modal
         title=""
@@ -148,11 +160,11 @@ const InvetoryScreen = () => {
         <InventoryForm
           id={id}
           closeModal={handleFormCloseModal}
-          refreshTable={handleFetchData}
+          refreshTable={handleRefetchData}
         />
       </Modal>
       <FloatButton
-        onClick={handleAddBtn}
+        onClick={() => setIsModalOpen(true)}
         shape="square"
         type="primary"
         style={{ right: 30 }}

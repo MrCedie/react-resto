@@ -1,56 +1,60 @@
-import { Button, Input, Select, Typography } from "antd";
+import { Button, Spin } from "antd";
 import { Formik } from "formik";
 import { useEffect, useState } from "react";
-import {
-  CategorySelectConstant,
-  ChickenOptions,
-  DrinksOptions,
-  PastaOptions,
-  SandwichOptions,
-} from "../../../core/constants/category-constant";
-import { SelectOptionType } from "../../../domain/types/select-option-type";
+
 import {
   addFirebase,
-  getItemDataFirebase,
+  getProductFirebase,
   updateFirebase,
 } from "../../../data/api/firebaseService";
+import { RootState } from "../../../domain/store/store";
+import { useSelector } from "react-redux";
+import SelectInput from "../../../core/components/forms/selectInput";
+import TextInput from "../../../core/components/forms/textInput";
+import NumberInput from "../../../core/components/forms/numberInput";
+import OptionField from "./optionField";
+import { removeObjectKey } from "../../../core/utils/method";
+import { inventoryValidationSchema } from "../../../core/constants/validation-schema-constant";
+
+type InventoryTableState = RootState["inventoryTable"];
 
 const InventoryForm = (props: {
   id: string | null;
   closeModal: Function;
   refreshTable: Function;
 }) => {
-  const [category, setCategory] = useState<string | null>(null);
-  const [option, setOption] = useState<SelectOptionType<String>[]>([]);
-  const [optionValue, setOptionValue] = useState<string | null>(null);
-  const [initializeForm, setInitializeForm] = useState<boolean>(true);
+  const { category } = useSelector<RootState, InventoryTableState>(
+    (state: any) => state.inventoryTable
+  );
+  const [categorySelect, setCategorySelect] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
+  const [submitLoading, setSubmitLoading] = useState<boolean>(false);
   const [initialValue, setInitialValue] = useState({
     category: "",
     name: "",
     price: 0,
     cost: 0,
-    stock: "",
-    option: "",
+    stock: 0,
+    options: [{ name: "", price: 0 }],
   });
 
   useEffect(() => {
     const handleData = async () => {
       if (props.id) {
-        setInitializeForm(false);
-        const { category, name, price, cost, option, stock } =
-          await getItemDataFirebase(props.id);
-        handleOptionSelection(category);
-        setOptionValue(option);
+        setLoading(true);
+        const { categoryId, name, price, cost, stock, options } =
+          await getProductFirebase(props.id);
+
+        setCategorySelect(categoryId);
         setInitialValue({
-          category,
+          category: categoryId,
           name,
           price,
           cost,
           stock,
-          option,
+          options: options ?? [],
         });
-        setInitializeForm(true);
+        setLoading(false);
         return;
       }
       return;
@@ -58,50 +62,31 @@ const InventoryForm = (props: {
     handleData();
   }, []);
 
-  const handleOptionSelection = (value: string) => {
-    let optionSelect: SelectOptionType<string>[] = [];
-    setCategory(value);
-
-    switch (value) {
-      case "SANDWICH":
-        optionSelect = SandwichOptions;
-        break;
-      case "DRINKS":
-        optionSelect = DrinksOptions;
-        break;
-      case "PASTA":
-        optionSelect = PastaOptions;
-        break;
-      case "CHICKEN":
-        optionSelect = ChickenOptions;
-        break;
-      default:
-        optionSelect = [];
-        break;
-    }
-    setOption(optionSelect);
-    setOptionValue(null);
-  };
-
   const handleSubmitForm = async (values: any): Promise<void> => {
-    setLoading(true);
-    values.category = category ?? "";
-    values.option = optionValue ?? "";
-
+    let newValue = values;
+    newValue.categoryId = values.category;
+    newValue = removeObjectKey(newValue, "category");
+    setSubmitLoading(true);
     if (props.id) {
-      await updateFirebase(props.id, values);
+      await updateFirebase(props.id, newValue);
       props.closeModal();
       props.refreshTable();
+      setSubmitLoading(false);
       return;
     }
-    await addFirebase(values);
+    await addFirebase(newValue);
     props.closeModal();
     props.refreshTable();
+    setSubmitLoading(false);
   };
 
-  return initializeForm ? (
-    <>
-      <Formik initialValues={initialValue} onSubmit={handleSubmitForm}>
+  return !loading ? (
+    <div style={{ maxHeight: "70vh", overflow: "scroll" }}>
+      <Formik
+        initialValues={initialValue}
+        onSubmit={handleSubmitForm}
+        validationSchema={inventoryValidationSchema}
+      >
         {({
           values,
           errors,
@@ -109,6 +94,8 @@ const InventoryForm = (props: {
           handleChange,
           handleBlur,
           handleSubmit,
+          setTouched,
+          setValues,
         }) => (
           <form
             onSubmit={handleSubmit}
@@ -119,102 +106,90 @@ const InventoryForm = (props: {
             }}
           >
             {/* CATEGORY */}
-            <Typography.Text>Category</Typography.Text>
-            <Select
-              onChange={(value) => handleOptionSelection(value)}
-              value={category}
+            <SelectInput
+              value={categorySelect}
+              onChange={(value) => {
+                setCategorySelect(value);
+                setTouched({ ...touched, category: true });
+                setValues({ ...values, category: value });
+              }}
+              error={errors.category && touched.category && errors.category}
+              options={category.map((res) => ({
+                value: res.id,
+                label: res.name,
+              }))}
+            ></SelectInput>
+
+            <br />
+            {/* PRODUCT NAME */}
+            <TextInput
+              label="Product Name"
+              name="name"
+              value={values.name}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              error={errors.name && touched.name && errors.name}
+            ></TextInput>
+
+            <br />
+            {/* PRODUCT PRICE */}
+            <NumberInput
+              label="Product Price"
+              name="price"
+              value={values.price}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              error={errors.price && touched.price && errors.price}
+            ></NumberInput>
+
+            <br />
+            {/* PRODUCT COST */}
+            <NumberInput
+              label="Product Cost"
+              name="cost"
+              value={values.cost}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              error={errors.cost && touched.cost && errors.cost}
+            ></NumberInput>
+
+            <br />
+            {/* STOCK */}
+            <NumberInput
+              label="Product stock"
+              name="stock"
+              value={values.stock}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              error={errors.stock && touched.stock && errors.stock}
+            ></NumberInput>
+
+            <br />
+            {/* OPTION */}
+            <OptionField
+              onChange={handleChange}
+              onBlur={handleBlur}
+              options={values.options}
+              error={errors}
+              touched={touched}
+            ></OptionField>
+
+            <br />
+            <Button
+              type="primary"
+              loading={submitLoading}
+              onClick={() => handleSubmit()}
             >
-              {CategorySelectConstant.map((res, i) => (
-                <Select.Option key={`option-category-${i}`} value={res.value}>
-                  {res.label}
-                </Select.Option>
-              ))}
-            </Select>
-            {errors.category && touched.category && errors.category}
-
-            {category ? (
-              <>
-                <br />
-                {/* PRODUCT NAME */}
-                <Typography.Text>Product Name</Typography.Text>
-                <Input
-                  type="text"
-                  name="name"
-                  value={values.name}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                />
-                {errors.name && touched.name && errors.name}
-
-                <br />
-                {/* OPTIONS */}
-                <Typography.Text>OPTIONS</Typography.Text>
-                <Select
-                  onChange={(value) => setOptionValue(value)}
-                  value={optionValue}
-                >
-                  {option.map((res, i) => (
-                    <Select.Option key={`option-${i}`} value={res.value}>
-                      {res.label}
-                    </Select.Option>
-                  ))}
-                </Select>
-                {errors.category && touched.category && errors.category}
-
-                <br />
-                {/* PRODUCT PRICE */}
-                <Typography.Text>Product Price</Typography.Text>
-                <Input
-                  type="number"
-                  name="price"
-                  value={values.price}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                />
-                {errors.price && touched.price && errors.price}
-
-                <br />
-                {/* PRODUCT COST */}
-                <Typography.Text>Product Cost</Typography.Text>
-                <Input
-                  type="number"
-                  name="cost"
-                  value={values.cost}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                />
-                {errors.cost && touched.cost && errors.cost}
-
-                <br />
-                {/* STOCK */}
-                <Typography.Text>Product Stock</Typography.Text>
-                <Input
-                  type="number"
-                  name="stock"
-                  value={values.stock}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                />
-                {errors.stock && touched.stock && errors.stock}
-
-                <br />
-                <Button
-                  type="primary"
-                  loading={loading}
-                  onClick={() => handleSubmit()}
-                >
-                  Submit
-                </Button>
-              </>
-            ) : (
-              ""
-            )}
+              Submit
+            </Button>
           </form>
         )}
       </Formik>
-    </>
+    </div>
   ) : (
-    <></>
+    <center>
+      <Spin />
+    </center>
   );
 };
 
