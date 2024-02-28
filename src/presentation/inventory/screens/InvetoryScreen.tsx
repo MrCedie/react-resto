@@ -148,6 +148,7 @@ const InvetoryScreen = () => {
         columns={tableInventoryColumn}
         dataSource={table}
         loading={loading}
+        pagination={false}
       />
       <Modal
         title=""
