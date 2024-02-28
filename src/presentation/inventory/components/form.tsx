@@ -52,7 +52,7 @@ const InventoryForm = (props: {
           price,
           cost,
           stock,
-          options: options,
+          options: options ?? [],
         });
         setLoading(false);
         return;
@@ -168,8 +168,10 @@ const InventoryForm = (props: {
             {/* OPTION */}
             <OptionField
               onChange={handleChange}
+              onBlur={handleBlur}
               options={values.options}
               error={errors}
+              touched={touched}
             ></OptionField>
 
             <br />

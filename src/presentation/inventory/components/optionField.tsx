@@ -1,9 +1,10 @@
 import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import { Typography, Space, Input, Button } from "antd";
-import { FieldArray, FormikErrors } from "formik";
+import { FieldArray, FormikErrors, FormikTouched } from "formik";
 import styled from "styled-components";
 import { InventoryFormType } from "../../../domain/types/inventory-form-type";
 import ErrorText from "../../../core/components/forms/errorText";
+import _ from "lodash";
 
 const StyledOptionFieldontainer = styled.div`
   display: flex;
@@ -24,27 +25,41 @@ interface OptionFieldProps {
       ? void
       : (e: string | React.ChangeEvent<any>) => void;
   };
+  onBlur: {
+    (e: React.FocusEvent<any>): void;
+    <T = string | any>(fieldOrEvent: T): T extends string
+      ? (e: any) => void
+      : void;
+  };
   options: { name: string; price: number }[];
   error: FormikErrors<InventoryFormType>;
+  touched: FormikTouched<InventoryFormType>;
 }
 
 const OptionField: React.FC<OptionFieldProps> = ({
   options,
   onChange,
   error,
+  onBlur,
+  touched,
 }) => {
   const optionError = error.options ?? [];
   function handleErr(index: number) {
     const err = optionError[index];
     const value = options[index];
     if (err) {
-      if (!value.name && value.price == null) {
+      // price accepts 0
+      const priceValidation = !/^\d+(\.\d+)?$/.test(String(value.price));
+      const nameEmpty = _.isEmpty(value.name);
+      if (nameEmpty && priceValidation) {
         return "Option name and price is required";
       }
-      if (!value.price || value.price != 0) {
+      if (priceValidation) {
         return "Price Option is required";
       }
-      return "Name Option is required";
+      if (nameEmpty) {
+        return "Name Option is required";
+      }
     }
     return null;
   }
@@ -56,17 +71,22 @@ const OptionField: React.FC<OptionFieldProps> = ({
         {({ remove, push }) => (
           <div className="option-container">
             {options.map((item, index) => (
-              <div className="option-field-group">
+              <div
+                className="option-field-group"
+                key={"options-field-" + index}
+              >
                 <Space.Compact key={index}>
                   <Input
                     name={`options[${index}].name`}
                     onChange={onChange}
+                    onBlur={onBlur}
                     value={item.name}
                     placeholder="Option Name"
                   />
                   <Input
                     name={`options[${index}].price`}
                     onChange={onChange}
+                    onBlur={onBlur}
                     placeholder="Option Price"
                     value={item.price}
                     type="number"
