@@ -113,13 +113,13 @@ const InvetoryScreen = () => {
     setId(null);
   }
 
-  const handleRefeshTable = () => {
-    handleFetchData();
+  const initialize = async () => {
+    await handleFetchData();
     getCategory();
   };
 
   useEffect(() => {
-    handleRefeshTable();
+    initialize();
   }, []);
 
   useEffect(() => {
@@ -131,7 +131,7 @@ const InvetoryScreen = () => {
   return (
     <div>
       <Row justify="space-between">
-        <Button onClick={handleRefeshTable}>
+        <Button onClick={handleRefetchData}>
           <ReloadOutlined />
         </Button>
         <Segmented
