@@ -61,21 +61,6 @@ const InventoryForm = (props: {
       await dispatch(createProduct(newValue));
       props.closeModal();
     }
-    // let newValue = values;
-    // newValue.categoryId = values.category;
-    // newValue = removeObjectKey(newValue, "category");
-    // setSubmitLoading(true);
-    // if (props.id) {
-    //   await updateFirebase(props.id, newValue);
-    //   props.closeModal();
-    //   props.refreshTable();
-    //   setSubmitLoading(false);
-    //   return;
-    // }
-    // await addFirebase(newValue);
-    // props.closeModal();
-    // props.refreshTable();
-    // setSubmitLoading(false);
   };
 
   return getProductStatus !== Status.LOADING ? (
@@ -183,7 +168,8 @@ const InventoryForm = (props: {
             <Button
               type="primary"
               loading={
-                createStatus === Status.LOADING || updateStatus === Status.LOADING
+                createStatus === Status.LOADING ||
+                updateStatus === Status.LOADING
               }
               onClick={() => handleSubmit()}
             >
