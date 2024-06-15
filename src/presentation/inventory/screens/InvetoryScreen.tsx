@@ -72,7 +72,8 @@ const InvetoryScreen = () => {
       key: "action",
       render: (_, record) => (
         <Space size="middle">
-          <div onClick={() => handleEditBtn(record.id)}>EDIT</div>
+          {/* eslint-disable-next-line */}
+          <a onClick={() => handleEditBtn(record.id)}>EDIT</a>
         </Space>
       ),
     },

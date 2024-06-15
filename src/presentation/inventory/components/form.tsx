@@ -8,11 +8,9 @@ import SelectInput from "../../../core/components/forms/selectInput";
 import TextInput from "../../../core/components/forms/textInput";
 import NumberInput from "../../../core/components/forms/numberInput";
 import OptionField from "./optionField";
-import { removeObjectKey } from "../../../core/utils/method";
 import { inventoryValidationSchema } from "../../../core/constants/validation-schema-constant";
 import { ProductsState } from "../../redux/state/productState";
 import { Status } from "../../../data/enum/status";
-import { CategoriesState } from "../../redux/state/categoriesState";
 import { InventoryState } from "../../redux/state/inventoryTableState";
 import {
   createProduct,
@@ -25,9 +23,6 @@ const InventoryForm = (props: {
   closeModal: Function;
   refreshTable: Function;
 }) => {
-  // const { category } = useSelector<RootState, InventoryTableState>(
-  //   (state: any) => state.inventoryTable
-  // );
   const dispatch: AppDispatch = useDispatch();
 
   const [categorySelect, setCategorySelect] = useState<string | null>(null);
@@ -42,43 +37,18 @@ const InventoryForm = (props: {
   );
 
   useEffect(() => {
-    if (product != null) {
-    }
-    // const handleData = async () => {
-    //   if (props.id) {
-    //     setLoading(true);
-    //     const { categoryId, name, price, cost, stock, options } =
-    //       await getProductFirebase(props.id);
-    //     setCategorySelect(categoryId);
-    //     setInitialValue({
-    //       category: categoryId,
-    //       name,
-    //       price,
-    //       cost,
-    //       stock,
-    //       options: options ?? [],
-    //     });
-    //     setLoading(false);
-    //     return;
-    //   }
-    //   return;
-    // };
-    // handleData();
-  }, []);
-
-  useEffect(() => {
-    if (getProductStatus == Status.SUCCESS && product !== null) {
+    if (getProductStatus === Status.SUCCESS && product !== null) {
       setCategorySelect(product.category);
     }
-  }, [getProductStatus]);
+  }, [getProductStatus, product]);
 
   const handleSubmitForm = async (values: ProductFormValue): Promise<void> => {
-    if (createStatus != Status.LOADING && updateStatus != Status.LOADING) {
+    if (createStatus !== Status.LOADING && updateStatus !== Status.LOADING) {
       let newValue = values as ProductForm;
       newValue.category = categorySelect!;
 
-      if (product != null && product.id != null) {
-        const id = product.id;
+      if (product !== null && product.id !== null) {
+        const id = product.id!;
         await dispatch(
           updateProduct({
             id,
@@ -213,7 +183,7 @@ const InventoryForm = (props: {
             <Button
               type="primary"
               loading={
-                createStatus == Status.LOADING || updateStatus == Status.LOADING
+                createStatus === Status.LOADING || updateStatus === Status.LOADING
               }
               onClick={() => handleSubmit()}
             >
