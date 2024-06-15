@@ -72,7 +72,7 @@ const InvetoryScreen = () => {
       key: "action",
       render: (_, record) => (
         <Space size="middle">
-          <a onClick={() => handleEditBtn(record.id)}>EDIT</a>
+          <div onClick={() => handleEditBtn(record.id)}>EDIT</div>
         </Space>
       ),
     },
@@ -127,7 +127,7 @@ const InvetoryScreen = () => {
               stock: res.stock,
             } as TableInventoryColumn)
         )}
-        loading={status == Status.LOADING || loading}
+        loading={status === Status.LOADING || loading}
         pagination={false}
       />
       <Modal

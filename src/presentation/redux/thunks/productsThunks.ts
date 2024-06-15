@@ -1,7 +1,7 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { Product } from "../../../domain/entities/product";
 import { ProductRepository } from "../../../domain/repositories/productRepository";
-import { setData, setInventory } from "../slices/inventoryTableSlice";
+import { setData } from "../slices/inventoryTableSlice";
 import { AppDispatch } from "../store";
 import { CreateProduct } from "../../../domain/usecases/products/createProductUsecase";
 import { ProductForm } from "../../../domain/entities/productForm";
