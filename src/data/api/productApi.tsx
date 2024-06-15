@@ -2,7 +2,7 @@ import axios from "axios";
 import { Product } from "../../domain/entities/product";
 import { ProductForm } from "../../domain/entities/productForm";
 
-const baseUrl = "http://localhost:3000";
+const baseUrl = process.env.REACT_APP_VERCEL_BASE_URL;
 
 export const getProducts = async (): Promise<Product[]> => {
   const res = await axios.get(`${baseUrl}/product`);

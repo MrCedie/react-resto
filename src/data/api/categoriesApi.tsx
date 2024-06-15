@@ -1,7 +1,7 @@
 import axios from "axios";
 import { Category } from "../../domain/entities/category";
 
-const baseUrl = "http://localhost:3000";
+const baseUrl = process.env.REACT_APP_VERCEL_BASE_URL;
 
 export const getCategories = async (): Promise<Category[]> => {
   const res = await axios.get(`${baseUrl}/categories`);
